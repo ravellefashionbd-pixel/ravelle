@@ -11,8 +11,6 @@ import type {
   StatCard,
   DashboardOrder,
   DashboardProduct,
-  ActivityItem,
-  RevenueDay,
 } from "@/../types/adminTypes";
 
 // Fallback static data for charts / activity (can be replaced with real data later)

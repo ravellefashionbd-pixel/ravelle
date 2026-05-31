@@ -1,6 +1,7 @@
 export async function verifyTurnstile(token: string) {
   if (!token) return false;
-
+  console.log("Token received:", token);
+  console.log("Secret key:", process.env.TURNSTILE_SECRET_KEY);
   try {
     const verifyRes = await fetch(
       "https://challenges.cloudflare.com/turnstile/v0/siteverify",

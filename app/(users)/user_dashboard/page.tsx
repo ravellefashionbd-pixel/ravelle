@@ -26,7 +26,7 @@ export default async function DashboardPage() {
         profile
           ? {
               ...profile,
-              email: user.email ?? "", // ← email auth থেকে নেওয়া
+              email: user.email ?? "",
             }
           : null
       }

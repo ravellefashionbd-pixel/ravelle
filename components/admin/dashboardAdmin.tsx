@@ -30,11 +30,6 @@ const DashboardContent = dynamic(
   { ssr: false, loading: () => <Loading /> },
 );
 
-const AnalyticsPage = dynamic(
-  () => import("@/../components/admin/Sidebar/AnalyticsPage"),
-  { ssr: false, loading: () => <Loading /> },
-);
-
 const OrdersPage = dynamic(
   () => import("@/../components/admin/Sidebar/OrderPage"),
   { ssr: false, loading: () => <Loading /> },
@@ -45,11 +40,6 @@ const ProductsPage = dynamic(
   { ssr: false, loading: () => <Loading /> },
 );
 
-const CollectionsPage = dynamic(
-  () => import("@/../components/admin/Sidebar/CollectionPage"),
-  { ssr: false, loading: () => <Loading /> },
-);
-
 const SettingsPage = dynamic(
   () => import("@/../components/admin/Sidebar/Settings"),
   { ssr: false, loading: () => <Loading /> },
@@ -57,11 +47,6 @@ const SettingsPage = dynamic(
 
 const CustomersPage = dynamic(
   () => import("@/../components/admin/Sidebar/CustomerPage"),
-  { ssr: false, loading: () => <Loading /> },
-);
-
-const BoutiquesPage = dynamic(
-  () => import("@/../components/admin/Sidebar/BoutiquesPage"),
   { ssr: false, loading: () => <Loading /> },
 );
 
@@ -89,14 +74,10 @@ export default function AdminDashboard({ userData }: DashboardProps) {
         return <ProductsPage />;
       case "settings":
         return <SettingsPage />;
-      case "collections":
-        return <CollectionsPage />;
+
       case "customers":
         return <CustomersPage />;
-      case "boutiques":
-        return <BoutiquesPage />;
-      case "analytics":
-        return <AnalyticsPage />;
+
       case "add_product":
         return <AddProductForm />;
       default:

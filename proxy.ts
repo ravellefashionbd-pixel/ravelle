@@ -30,34 +30,34 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  //PROTECTED ROUTE
+  // PROTECTED ROUTE
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  //FIND USER ROLE
-  let userRole = 0;
+  // FIND USER ROLE
+  let isAdmin = 0;
   if (user) {
     const { data: profile } = await supabase
-      .from("users")
-      .select("role")
+      .from("profiles")
+      .select("is_admin")
       .eq("id", user.id)
       .single();
 
-    userRole = profile?.role ?? 0;
+    isAdmin = profile?.is_admin ?? 0;
   }
 
   const url = request.nextUrl.clone();
 
-  //ADMIN DASHBOARD PROTECTION
+  // ADMIN DASHBOARD PROTECTION
   if (url.pathname.startsWith("/admin")) {
-    if (!user || userRole !== 1) {
+    if (!user || isAdmin !== 1) {
       url.pathname = "/login";
       return NextResponse.redirect(url);
     }
   }
 
-  //USER DASHBOARD PROTECTION
+  // USER DASHBOARD PROTECTION
   if (url.pathname.startsWith("/user_dashboard")) {
     if (!user || !user.email_confirmed_at) {
       url.pathname = "/login";
@@ -65,13 +65,11 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
-  //IF ALREADY LOGIN
+  // IF ALREADY LOGGED IN
   if (user && (url.pathname === "/login" || url.pathname === "/register")) {
-    url.pathname = userRole === 1 ? "/admin" : "/user_dashboard";
+    url.pathname = isAdmin === 1 ? "/admin" : "/user_dashboard";
     return NextResponse.redirect(url);
   }
-
-  //CHECKOUT ROUTE PROTECTION
 
   return supabaseResponse;
 }
@@ -79,6 +77,7 @@ export async function updateSession(request: NextRequest) {
 export async function proxy(request: NextRequest) {
   return await updateSession(request);
 }
+
 export const config = {
   matcher: [
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",

@@ -143,7 +143,7 @@ export default function LoginPage() {
 
             {/* CAPTCHA */}
             <Turnstile
-              sitekey="0x4AAAAAAC-_oNGSJuuZoEbY"
+              sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
               onVerify={(token) => setCaptchaToken(token)}
             />
 

@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { Heart, Plus, Star, Edit, Trash2 } from "lucide-react";
 import { createClient } from "@/../lib/supabase/supabaseClient";
-import type { Product, ProductImage } from "@/../types/database.types";
+import type { Tables } from "@/../types/database.types";
 
-// Supabase returns a joined shape — define it explicitly to avoid `any`
+type Product = Tables<"products">;
+type ProductImage = Tables<"product_images">;
+
 type ProductImagePartial = Pick<ProductImage, "url" | "is_primary">;
 
 type ProductRow = Product & {
@@ -24,15 +26,9 @@ export default function ProductsPage() {
     const supabase = createClient();
 
     async function fetchProducts() {
-      // Fetch active products with their primary image
       const { data: productsData } = await supabase
         .from("products")
-        .select(
-          `
-          *,
-          product_images (url, is_primary)
-        `,
-        )
+        .select(`*, product_images (url, is_primary)`)
         .eq("is_active", 1)
         .order("created_at", { ascending: false })
         .limit(12);
@@ -42,15 +38,13 @@ export default function ProductsPage() {
         return;
       }
 
-      const mapped: ProductWithImage[] = (productsData as ProductRow[]).map(
-        (p) => {
-          const primary = p.product_images?.find((img) => img.is_primary === 1);
-          return {
-            ...p,
-            primaryImage: primary?.url ?? null,
-          };
-        },
-      );
+      const mapped: ProductWithImage[] = (productsData as ProductRow[]).map((p) => {
+        const primary = p.product_images?.find((img) => img.is_primary === 1);
+        return {
+          ...p,
+          primaryImage: primary?.url ?? null,
+        };
+      });
 
       setProducts(mapped);
       setLoading(false);
@@ -78,15 +72,16 @@ export default function ProductsPage() {
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="bg-white border border-black/8 p-5 animate-pulse"
-            >
+            <div key={i} className="bg-white border border-black/8 p-5 animate-pulse">
               <div className="h-28 bg-black/5 mb-4" />
               <div className="h-3 bg-black/5 w-3/4 mb-2" />
               <div className="h-2 bg-black/5 w-1/2" />
             </div>
           ))}
+        </div>
+      ) : products.length === 0 ? (
+        <div className="text-center py-16 text-[10px] tracking-widest text-black/30">
+          NO PRODUCTS YET
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -118,7 +113,6 @@ export default function ProductsPage() {
                 <p className="text-sm font-medium text-black">
                   ৳ {p.base_price.toLocaleString()}
                 </p>
-                {/* Rating placeholder — no rating column in schema */}
                 <div className="flex items-center gap-1">
                   <Star size={10} className="text-amber-400 fill-amber-400" />
                   <p className="text-[10px] text-black/50">—</p>

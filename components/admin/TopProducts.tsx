@@ -1,7 +1,11 @@
 import { User } from "lucide-react";
-import type { Product } from "@/../types/adminTypes";
+import type { DashboardProduct } from "@/../types/adminTypes";
 
-export default function TopProducts({ products }: { products: Product[] }) {
+export default function TopProducts({
+  products,
+}: {
+  products: DashboardProduct[];
+}) {
   const max = Math.max(...products.map((p) => p.unitsSold));
 
   return (

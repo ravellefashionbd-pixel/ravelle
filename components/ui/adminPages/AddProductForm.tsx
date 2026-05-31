@@ -6,9 +6,7 @@ import toast from "react-hot-toast";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-// Maps to products.is_active (0 = draft/archived, 1 = active)
 type ProductStatus = "draft" | "active" | "archived";
-
 type GenderTarget = "men" | "women" | "unisex" | "kids";
 type SizeLabel =
   | "XS"
@@ -20,29 +18,21 @@ type SizeLabel =
   | "XXXL"
   | "FREE SIZE"
   | "";
-
-// Maps to products.category_slug
 type CategoryType = "perfume" | "clothing" | "cosmetics" | "watches";
 
-// Maps to product_variants row
 interface Variant {
-  id: string; // local only (not sent to DB)
-  sku: string; // product_variants.sku
-  price: string; // product_variants.price
-  stock_qty: string; // product_variants.stock_qty
-  // clothing
-  size: SizeLabel; // product_variants.size
-  // color
-  color_name: string; // product_variants.color
-  color_hex: string; // product_variants.color_hex
-  // extra (stored as JSON in description or separate meta — shown below)
+  id: string;
+  sku: string;
+  price: string;
+  stock_qty: string;
+  size: SizeLabel;
+  color_name: string;
+  color_hex: string;
   compare_price: string;
   weight_gm: string;
-  // perfume bottle
   volume_ml: string;
   bottle_type: string;
   is_decant: boolean;
-  // clothing measurements (stored in description JSON)
   chest_cm: string;
   waist_cm: string;
   length_cm: string;
@@ -71,7 +61,8 @@ interface ClothingDetails {
   country_origin: string;
 }
 
-interface FormData {
+// Renamed from FormData → ProductFormData to avoid conflict with browser's FormData API
+interface ProductFormData {
   name: string;
   slug: string;
   category_type: CategoryType | "";
@@ -117,7 +108,7 @@ const emptyVariant = (): Variant => ({
   shoulder_cm: "",
 });
 
-const INITIAL: FormData = {
+const INITIAL: ProductFormData = {
   name: "",
   slug: "",
   category_type: "",
@@ -270,7 +261,7 @@ export default function AddProductForm({
   onSuccess?: (productId: string) => void;
   onDiscard?: () => void;
 }) {
-  const [form, setForm] = useState<FormData>(INITIAL);
+  const [form, setForm] = useState<ProductFormData>(INITIAL);
   const [previews, setPreviews] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState<
@@ -281,7 +272,7 @@ export default function AddProductForm({
 
   // ── Setters ──────────────────────────────────────────────────────────────
 
-  const set = (patch: Partial<FormData>) =>
+  const set = (patch: Partial<ProductFormData>) =>
     setForm((p) => {
       const n = { ...p, ...patch };
       if ("name" in patch) n.slug = slugify(patch.name ?? "");
@@ -307,10 +298,7 @@ export default function AddProductForm({
     setForm((p) => ({ ...p, variants: [...p.variants, emptyVariant()] }));
 
   const removeVariant = (id: string) =>
-    setForm((p) => ({
-      ...p,
-      variants: p.variants.filter((v) => v.id !== id),
-    }));
+    setForm((p) => ({ ...p, variants: p.variants.filter((v) => v.id !== id) }));
 
   const updateVariant = (id: string, patch: Partial<Variant>) =>
     setForm((p) => ({
@@ -361,14 +349,6 @@ export default function AddProductForm({
   };
 
   // ── Submit → Supabase ─────────────────────────────────────────────────────
-  //
-  // Schema mapping:
-  //   products        → name, slug, category_slug, description (JSON), base_price, is_active, meta_title, meta_description
-  //   product_variants→ product_id, size, color, color_hex, stock_qty, price, sku
-  //   product_images  → product_id, url, is_primary, sort_order
-  //
-  // Extra fields (perfume notes, clothing details, measurements) are serialized
-  // into a structured JSON string prepended to description so nothing is lost.
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -381,7 +361,6 @@ export default function AddProductForm({
     const supabase = createClient();
 
     try {
-      // ── 1. Build rich description JSON ──────────────────────────────────
       const isPerfume = form.category_type === "perfume";
       const isClothing = form.category_type === "clothing";
 
@@ -398,7 +377,7 @@ export default function AddProductForm({
 
       const descriptionJson = JSON.stringify(descriptionMeta);
 
-      // ── 2. Insert product ───────────────────────────────────────────────
+      // 1. Insert product
       const { data: product, error: productError } = await supabase
         .from("products")
         .insert({
@@ -420,10 +399,7 @@ export default function AddProductForm({
 
       const productId = product.id;
 
-      // ── 3. Insert variants ──────────────────────────────────────────────
-      // product_variants: size, color, color_hex, stock_qty, price, sku
-      // Extra measurements are stored in a JSON sku suffix convention or
-      // we can skip them — they live in the form for display purposes only.
+      // 2. Insert variants
       const variantRows = form.variants.map((v) => ({
         product_id: productId,
         size: v.size || "ONE SIZE",
@@ -438,11 +414,9 @@ export default function AddProductForm({
         .from("product_variants")
         .insert(variantRows);
 
-      if (variantsError) {
-        throw new Error(variantsError.message);
-      }
+      if (variantsError) throw new Error(variantsError.message);
 
-      // ── 4. Upload images & insert product_images ────────────────────────
+      // 3. Upload images
       if (form.images.length > 0) {
         const imageInserts: {
           product_id: string;
@@ -463,7 +437,7 @@ export default function AddProductForm({
 
           if (uploadError) {
             console.error("Image upload failed:", uploadError.message);
-            continue; // skip failed images, don't abort
+            continue;
           }
 
           const { data: urlData } = supabase.storage
@@ -484,14 +458,11 @@ export default function AddProductForm({
             .from("product_images")
             .insert(imageInserts);
 
-          if (imagesError) {
+          if (imagesError)
             console.error("Image record insert failed:", imagesError.message);
-            // Not fatal — product and variants already saved
-          }
         }
       }
 
-      // ── 5. Done ─────────────────────────────────────────────────────────
       toast.success(`"${form.name}" published successfully!`);
       setForm(INITIAL);
       setPreviews([]);
@@ -769,7 +740,6 @@ export default function AddProductForm({
                 </div>
               )}
 
-              {/* Perfume Details */}
               {isPerfume && (
                 <div>
                   <SectionHeader
@@ -958,7 +928,6 @@ export default function AddProductForm({
                 </div>
               )}
 
-              {/* Clothing Details */}
               {isClothing && (
                 <div>
                   <SectionHeader
@@ -1097,7 +1066,6 @@ export default function AddProductForm({
                       )}
                     </div>
 
-                    {/* Core DB fields */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                       <Field error={errors[`variant_${i}_sku`]}>
                         <Label required>SKU</Label>
@@ -1156,7 +1124,6 @@ export default function AddProductForm({
                       </Field>
                     </div>
 
-                    {/* Color (maps to product_variants.color + color_hex) */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                       <Field>
                         <Label>Color Name</Label>
@@ -1200,7 +1167,6 @@ export default function AddProductForm({
                       </Field>
                     </div>
 
-                    {/* Perfume bottle fields */}
                     {isPerfume && (
                       <div className="mt-4 pt-4 border-t border-zinc-100">
                         <p className="text-[9px] tracking-[0.4em] uppercase text-zinc-300 mb-4">
@@ -1221,7 +1187,6 @@ export default function AddProductForm({
                               onChange={(e) =>
                                 updateVariant(v.id, {
                                   volume_ml: e.target.value,
-                                  // size stores "100ml" in DB
                                   size: `${e.target.value}ml` as SizeLabel,
                                 })
                               }
@@ -1255,9 +1220,7 @@ export default function AddProductForm({
                             <button
                               type="button"
                               onClick={() =>
-                                updateVariant(v.id, {
-                                  is_decant: !v.is_decant,
-                                })
+                                updateVariant(v.id, { is_decant: !v.is_decant })
                               }
                               className={`w-full py-3 px-4 text-[10px] tracking-[0.25em] uppercase border transition-all ${
                                 v.is_decant
@@ -1272,7 +1235,6 @@ export default function AddProductForm({
                       </div>
                     )}
 
-                    {/* Clothing size fields (size maps to product_variants.size) */}
                     {isClothing && (
                       <div className="mt-4 pt-4 border-t border-zinc-100">
                         <p className="text-[9px] tracking-[0.4em] uppercase text-zinc-300 mb-4">
@@ -1403,7 +1365,6 @@ export default function AddProductForm({
                   </p>
                 </Field>
 
-                {/* Search preview */}
                 <div className="border border-zinc-100 p-5">
                   <p className="text-[9px] tracking-[0.4em] uppercase text-zinc-300 mb-4">
                     Search Preview
@@ -1436,7 +1397,6 @@ export default function AddProductForm({
             >
               Discard
             </button>
-
             <div className="flex items-center gap-3">
               <button
                 type="button"

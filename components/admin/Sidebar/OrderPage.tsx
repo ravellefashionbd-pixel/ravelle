@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { Filter, Plus, MoreHorizontal } from "lucide-react";
 import { createClient } from "@/../lib/supabase/supabaseClient";
-import type { Order } from "@/../types/database.types";
+import type { Tables } from "@/../types/database.types";
 
-// orders.status in DB is a plain string — we narrow it for display
+type Order = Tables<"orders">;
+
 type DisplayStatus =
   | "DELIVERED"
   | "SHIPPED"
@@ -68,6 +69,10 @@ export default function OrdersPage() {
         {loading ? (
           <div className="p-8 text-center text-[10px] tracking-widest text-black/30">
             LOADING...
+          </div>
+        ) : orders.length === 0 ? (
+          <div className="p-8 text-center text-[10px] tracking-widest text-black/30">
+            NO ORDERS YET
           </div>
         ) : (
           <table className="w-full min-w-[640px]">

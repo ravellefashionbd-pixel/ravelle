@@ -39,11 +39,6 @@ const navSections = [
     section: "CATALOGUE",
     items: [
       {
-        label: "COLLECTIONS",
-        key: "collections",
-        icon: <ShoppingCart size={13} strokeWidth={1.5} />,
-      },
-      {
         label: "PRODUCTS",
         key: "products",
         icon: <Heart size={13} strokeWidth={1.5} />,
@@ -58,16 +53,6 @@ const navSections = [
   {
     section: "STORE",
     items: [
-      {
-        label: "BOUTIQUES",
-        key: "boutiques",
-        icon: <Store size={13} strokeWidth={1.5} />,
-      },
-      {
-        label: "ANALYTICS",
-        key: "analytics",
-        icon: <BarChart2 size={13} strokeWidth={1.5} />,
-      },
       {
         label: "SETTINGS",
         key: "settings",

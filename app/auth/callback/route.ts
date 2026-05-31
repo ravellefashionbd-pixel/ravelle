@@ -19,7 +19,7 @@ export async function GET(request: Request) {
       if (user) {
         const { data: profile, error: profileError } = await supabase
           .from("profiles")
-          .select("is_admin") // ← role → is_admin
+          .select("is_admin")
           .eq("id", user.id)
           .single();
 

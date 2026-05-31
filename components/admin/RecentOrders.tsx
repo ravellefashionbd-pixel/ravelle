@@ -1,12 +1,12 @@
-import type { Order } from "@/../types/adminTypes";
+import type { DashboardOrder } from "@/../types/adminTypes";
 
-const statusStyles: Record<Order["status"], string> = {
+const statusStyles: Record<DashboardOrder["status"], string> = {
   SHIPPED: "text-[#2d7a4f]",
   PROCESSING: "text-[#c9a84c]",
   DELIVERED: "text-[#9e9892]",
 };
 
-export default function RecentOrders({ orders }: { orders: Order[] }) {
+export default function RecentOrders({ orders }: { orders: DashboardOrder[] }) {
   return (
     <div className="bg-white border border-[#e8e4de] rounded-sm p-5">
       <div className="flex items-center justify-between mb-5">
